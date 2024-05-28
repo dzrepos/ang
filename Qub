@@ -1,0 +1,390 @@
+//Qubes//
+//app component.ts//
+import { Component } from '@angular/core';
+import {Router} from '@angular/router';
+@Component({
+selector: 'app-root',
+templateUrl: './app.component.html',
+styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+constructor(private router:Router){}
+addAsset(){
+this.router.navigate(['addAsset']);
+}
+}
+ 
+//Appcomponent.html//
+<nav class="navbar navbar-inverse">
+<div class="container-fluid">
+<div class="navbar-header">
+<a class="navbar-brand" href="#">Quebes</a>
+</div>
+<ul class="nav navbar-nav">
+<li>
+<a routerLink="/addAsset">Add Asset</a>
+</li>
+<li>
+<a routerLink="/viewAsset">View Asset</a>
+</li>
+</ul>
+</div>
+</nav>
+<div>
+<router-outlet></router-outlet>
+</div
+ 
+//app routingmodule.ts//
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
+import { AddAssetComponent } from './add-asset/add-asset.component';
+import { ViewAssetComponent } from './view-asset/view-asset.component';
+import {UpdateAssetComponent} from './update-asset/update-asset';
+import { UpdateGuard} from './shared/update.guard';
+export const routes: Routes = [
+{path: 'addAsset', component:AddAssetComponent},
+{path: 'viewAsset', component: ViewAssetComponent},
+{path:'updateAsset/:assetId',component:UpdateAssetComponent,
+canActivate:[UpdateGuard]},
+{path:'**', redirectTo:'addAsset', pathMatch: 'full'}
+];
+@NgModule({
+imports: [RouterModule.forRoot(routes)],
+exports: [RouterModule]
+})
+export class AppRoutingModule {}
+ 
+//view-asset.component.html//
+<div class="row">
+<div class="col-md-6 col-md-offset-3">
+<div class="panel panel-primary">
+<div class="panel-heading">View Booking</div>
+//code here
+<label for="selectAssetId">Select asset Id</label>
+<input type="text" #event name="event">
+<button type="submit" (click)="viewAsset()">Get Details</button>
+</div>
+<div *ngIf="assetId">
+<table>
+<thead>
+<tr>
+<th>
+Asset Name
+</th>
+<th>
+Asset Category
+</th>
+<th>
+Asset Description
+</th>
+<th>
+Date of purchase
+</th>
+<th>
+Asset Cost
+</th>
+<tr>
+<th>
+Asset Name
+</th>
+<th>
+Asset Category
+</th>
+<th>
+Asset Description
+</th>
+<th>
+Date of purchase
+</th>
+<th>
+Asset Cost
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{{assetDetails.assetName}}</td>
+<td>{{assetDetails.assetCategory}}</td>
+<td>{{assetDetails.assetDescription}}</td>
+<td>{{assetDetails.dateOfPurchase}}</td>
+<td>{{assetDetails.assetCost}} </td>
+</tr>
+</tbody>
+</table>
+</div>
+
+ 
+//view asset component.ts//
+import { Component } from '@angular/core';
+import { AssetService } from '../shared/asset.service';
+import { Router } from '@angular/router';
+import Asset from '../shared/Asset';
+@Component({
+selector: 'app-view-asset',
+templateUrl: 'view-asset.component.html',
+styleUrls: ['./view-asset.component.css']
+})
+export class ViewAssetComponent {
+successMessage:string;
+errorMessage: string;
+assetId: string;
+assetDetails: Asset;
+
+constructor(private assetService: AssetService, private router: Router) { }
+viewAsset(assetId) {
+this.assetService.getAssetDetails(this.assetId).subscribe( (data)=>{
+this.successMessage=data.message;
+})
+this.assetService.getAssetDetails(this.assetId).subscribe(
+(data)=>{
+this.errorMessage=data.message;
+})
+}
+update(assetId) {
+this.assetId=assetId;
+this.router.navigate(['/updateAsset/', assetId ]);
+}
+}
+ 
+//Update asset component.ts//
+import { Component, OnInit } from '@angular/core';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { AssetService } from '../shared/asset.service';
+import { ActivatedRoute } from '@angular/router';
+@Component({
+selector: 'app-update-asset',
+templateUrl: './update-asset.component.html',
+styleUrls: ['./update-asset.component.css']
+})
+export class UpdateAssetComponent implements OnInit {
+data: any;
+successMessage: string;
+updateAssetForm: FormGroup;
+assetId: any;
+constructor(private assetservice: AssetService, private fb:
+FormBuilder, private route: ActivatedRoute) { }
+ngOnInit() {
+this.route.params.subscribe((data)=>{
+this.assetId=data.assetId
+})
+this.updateAssetForm=this.fb.group({
+updateField: ['', [Validators.required]],
+updateValue: ['', [Validators.required]]
+})
+}
+updateAsset() {
+  //code here//
+  this.assetService.updateAsset(this.assetId,{"assetName":"Dell"}).subscribe((data)=>{
+    //this.successMessage="formupd"//
+    //if not working write//
+    this.successMessage=data.message
+  })
+}}
+ 
+//update.guard.ts//
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
+import { AssetService } from './asset.service';
+@Injectable({
+providedIn: 'root'
+})
+export class UpcateGuard implements CanActivate {
+constructor(private assetService: AssetService, private router:
+Router) { }
+canActivate(): boolean {
+//code here//
+if (!this.assetService.authenticate) {
+this.router.navigate(['/viewAsset'])
+return false
+}
+else
+return true
+}}
+      (or)
+canActivate(value:any):boolean{
+if(value=AssetService){
+return true
+}
+else{
+return this.router.navigate['/viewAsset']
+}}
+ 
+ 
+//asset service.ts//
+import { Injectable } from '@angular/core';
+import { HttpClient, //HttpParams// } from '@angular/common/http';
+import { Observable } from 'rxjs';
+@Injectable({
+providedIn: 'root'
+})
+export class AssetService {
+url = 'http://localhost:3020/assetDetails';
+authenticate = false;
+constructor(private httpClient: HttpClient) {}
+addAsset (data: any): Observable<any>{
+return this.httpClient.post(this.url, data);
+}
+getAssetDetails(assetId): Observable<any> {
+var params=new HttpParams().set('assetId', assetId);
+//return this.httpClient.put(this.url, {params})//
+return this.httpClient.patch(this.url+ '/'+assetId);
+}
+updateAsset(assetId, data) {
+var params=new HttpParams().set('assetId', assetId);
+//return this.httpClient.patch(this.url, {params})//
+return this.httpClient.patch(this.url, '/' assetId.data);
+}
+ 
+//add asset component.ts//
+import {Component,OnInit} from '@angular/core';
+import {FormGroup, FormBuilder,Validators,FormControl} from '@angular/forms';
+import {AssetService} from '../shared/asset.service;
+@Component({
+//selector:'app-add-asset',//
+// templateUrl: '/add-asset.component.html',//
+// styleUrls: ['./add-asset.component.css']//
+// })//
+export class AddAssetComponent implements OnInit {
+successMessage: string;
+addAssetForm: FormGroup;
+constructor(private fb: FormBuilder, private assetService: AssetService) {
+}
+ngOnInit() {
+//Add specified validators//
+//this.addAssetForm= new FormGroup({//
+this.addAssetForm=this.fb.group({
+assetName:['',[Validators.required]],
+//assetName: new FormControl['', [Validators.required]],//
+assetCategory: new FormControl['', [Validators.required]].
+dateOfPurchase: new FormControl['', [ Validators.required, validateDateOfPurchase]],
+assetCost: new FormControl['', [Validators.required]],
+assetDescription: new FormControl['', [Validators.required, Validators.maxLength(50)]],
+})
+}
+addAsset() {
+  //code here//
+this.assetService.addAsset(this.addAssetForm.value).subscribe(
+(data)=>{
+this.successMessage= data.message;
+})
+}
+}
+//Add custom validation for dateOfPurchase//
+function validateDateOfPurchase(c: FormControl) {
+let dop= new Date(c.value);
+let today=new Date();
+if(dop>today)
+return{ dateError: {message: "Date should not be greater than today's date"}
+}
+return null;
+}
+ 
+//add asset component.html//
+<div class="col-md-6 col-md-offset-3">
+<br/>
+<div class="panel panel-primary">
+<div class="panel-heading">Add a new Asset</div>
+<div class="panel-body">
+//code here//
+<form [formGroup]="addAssetForm" (ngSubmit)="addAsset()">
+<div class="form-group">
+<label for="assetName">Asset Name</label>
+<input type="text" formControlName="assetName" class="form-control" id="assetName">
+</div>
+<div id="assetNameError" class="text-danger"
+*ngIf="addAssetForm.controls['assetName'].invalid&& addAssetForm.controls['assetName'].dirty">
+<span *ngIf="addAssetForm.controls['assetName'].errors['required']">Please enter name</span>
+</div>
+<div class="form-group">
+<label for="assetCategory">Asset Category</label>
+<select formControlName="assetCategory" class="form-control" id="assetCategory">
+<option value="" disabled="disabled" selected="true">select a category</option>
+<option value="Laptop">Laptop</option>
+<option value="Desktop">Desktop</option>
+<option value="Voip">voip</option>
+<option value="Router">Router</option>
+</select>
+</div>
+<div id="assetCategoryError" class="text-danger"
+*ngIf="addAssetForm.controls['assetCategory'].invalid&& addAssetForm.controls['assetCategory'].dirty">
+<span *ngIf="addAssetForm.controls['assetCategory'].errors['required']">Field Required</span>
+</div>
+<div class="form-group">
+<label for="assetDescription">Asset Description</label>
+<textarea type="text"
+formControlName="assetDescription" class="form-control" id="assetDescription"></textarea>
+</div>
+<div id="assetDescriptionError" class="text-danger"
+*ngIf="addAssetForm.controls['assetDescription'].invalid&& addAssetForm.controls['assetDescription'].dirty">
+<span *ngIf="addAssetForm.controls[ assetDescription'].errors['required']">Please Enter Description</span>
+<span *ngIf="addAssetForm.controls['assetDescription'].errors['maxLength']">Maximum 50 Characters</span>
+</div>
+<div class="form-group">
+<label for="dateOfPurchase">date Of Purchase</label>
+<input type="date" formControlName="dateOfPurchase" class="form-control" id="dateOfPurchase">
+</div>
+<div id="dateOfPurchaseError" class="text-danger"
+*ngIf="addAssetForm.controls['dateOfPurchase'].invalid&& addAssetForm.controls['dateOfPurchase'].dirty">
+<span *ngIf="addAssetForm.controls['dateofPurchase'].
+errors['required']" >{{addAssetForm.controls ['dateOfPurchase'].errors['dateOfPurchaseError']. message}}</span>
+</div>
+<div class="form-group">
+<label for="assetCost">Asset Cost</label>
+<input type="number" formControlName="assetCost" class="form-control" id="assetCost">
+</div>
+<div id="assetCostError" class="text-danger"
+*ngIf="addAssetForm.controls['assetCost'].invalid&& addAssetForm.controls['assetCost'].dirty">
+<span *ngIf="addAssetForm.controls['assetCost'].errors['required']">Please Enter Cost</span>
+</div>
+<div class="form-group">
+<button class="btn btn-primary" type="submit" [disabled]="addAssetForm.invalid">Add Asset</button>
+</div>
+</form>
+<div *ngIf="successMessage" id="successMessage" class="text-success">
+{{successMessage}}
+</div>
+</div>
+</div>
+</div>
+ 
+ 
+//update asset component.html//
+<div class="row">
+<br/>
+<div class="col-md-6 col-md-offset-3">
+<div class="panel panel-primary">
+<div class="panel-heading">Update Asset</div>
+<div class="panel-body">
+//code here//
+<form [formGroup]="updateAssetForm" (ngSubmit)="updateAsset()">
+<div class=" form-Group">
+<label for="updateField">Field</label>
+<select formControlName="updateField"
+class="form-control" id="updateField">
+<option value="" disabled="true">Select field</option>
+<option value="AssetName">AssetName</option>
+<option value="AssetCategory"> Asset Category</option>
+<option value="AssetDescription">Asset Description</option>
+</select>
+</div>
+<div class="form-group">
+<label for="updateValue">Value</label>
+<input type="text" formControlName="updateValue"
+class="form-control" id="updateValue"/>
+</div>
+<div id="updatevalueError"
+class="text-darger"*ngIf="updateAssetForm.controls
+['updateValue'].invalid"></div>
+<div class="form-group">
+<button class="btn btn-primary" id="updateAsset"
+type="submit" [disabled]="updateAssetForm.invalid">Update
+Asset</button>
+</div>
+<div *ngIf="successmessage"></div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</div>
+------------------------------------------------------------------------------------------
