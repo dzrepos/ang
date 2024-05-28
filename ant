@@ -1,0 +1,156 @@
+//antiqmartnew//
+//enquire-order.component.html//
+<br /><br />
+<div class="container" *ngIf="productDetails">
+<div class="row">
+<div class="col-md-6 offset-3">
+<h4 class="font-monospace text-center">Enquire Order</h4>
+<br />
+//create the form//
+<form [formGroup]="enquiryForm" (ngSubmit)="enquireOrder()">
+<div class="form-group">
+<label for="id">Id</label>
+<input class="form-control" type="text" id="id" formControlName="id">
+</div>
+<div class="form-group">
+<label for="productName">Product Name</label>
+<input class="form-control" type="text" id="productName"
+formControlName="productName">
+</div>
+<div class="form-group">
+<label for="cost">Cost</label>
+<input type="text" id="cost" formControlName="cost">
+</div>
+<div class="form-group">
+<label for="message">Message</label>
+<input class="form-control" type="text" id="message" formControlName="message">
+</div>
+<div>
+<label for="mobile">Mobile</label>
+<input type="number" id="mobile" formControlName="mobile">
+</div>
+<div class="form-group">
+<label for="email">Email</label>
+<input type="text" id="email" formControlName="email">
+</div>
+<div class="form-group">
+<input type="radio" id="courier" formControlName="courier">Domestic
+<input type="radio" id="courier" formControlName="courier">International
+</div>
+<div class="form-group">
+<input type="checkbox" id="gift" formControlName="gift">Gift Wrap
+<button [disabled]="!enquiryForm.valid" (click)="enquireOrder()">Enquire Us</button>
+</div>
+<span *ngIf="successMessage != null">{{successMessage}}</span> 
+<span *ngIf="errorMessage != null">{{errorMessage}}</span>
+</form>
+</div>
+</div>
+</div>
+ 
+//enquire-order component.ts//
+this.service.getProductDetails(this.route.params.subscribe(param=>param['id']));
+this.enquiryForm = this. formBuilder.group({
+id: new FormControl({value: "", disabled:true}),
+productName: new FormControl({value:"", disabled:true}),
+cost: new FormControl({value: "", disabled: true}),
+message: ['', [Validators.required, Validators.pattern("[A-Za-z\\w]+")]],
+mobile: ['', [Validators.required, Validators.pattern("[0-9](10)")]],
+email: ['', [Validators.required, Validators.email]],
+courier: ['domestic'],
+gift: ['']
+});
+}
+enquireOrder() {
+this.service.enquireOrder(this.enquiryForm).subscribe((response) => {
+this.successMessage=response.message;
+this.errorMessage = response.error.message;
+});
+}
+ 
+ 
+//app-routing.module.ts//
+import { NgModule} from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { HomeComponent } from './home/home.component';
+import { EnquireOrderComponent } from './enquire-order/enquire-order.component'; 
+import { ProductsComponent } from './products/products.component';
+export const routes: Routes = [
+  {path: 'home', component: HomeComponent},
+{path: '', redirectTo: 'home', pathMatch: 'full'}, 
+{path: 'products', component: ProductsComponent},
+{path: 'enquire-order/:id', component: EnquireOrderComponent}, 
+{path: '**', redirectTo: 'home', pathMatch: 'full'}
+];
+@NgModule({
+imports: [RouterModule.forRoot(routes)],
+exports: [RouterModule]
+})
+export class AppRoutingModule {}
+ 
+//view-details.component.ts//
+import {Component, Input } from '@angular/core';
+import { Router } from '@angular/router';
+import { SharedService } from '../shared.service';
+@Component({
+selector: 'app-view-details',
+templateUrl: './view-details.component.html',
+styleUrls: ['./view-details.component.css']
+})
+export class ViewDetailsComponent {
+constructor(private router: Router, private service: SharedService) { }
+@Input() productDetails: any = {}
+placeOrder() {
+this.router.navigate(['/enquire-order/:id']);
+}}
+ 
+//products.component.ts//
+import {HttpClient } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { SharedService } from '../shared.service';
+@Component({
+selector: 'app-products',
+templateUrl: './products.component.html',
+styleUrls: ['./products.component.css']
+})
+export class ProductsComponent implements OnInit {
+//You may create properties/methods here to bind text to template//
+constructor(private service: SharedService, private http: HttpClient, private router: Router) { }
+product: any = {}
+selectedCategory: any
+productList: any[] = []
+categoryList = ["clock", "painting", "furniture", "pottery"]
+ 
+ngOnInit(): void {
+  this.service.getProductListDetails().subscribe((response) => {
+     this.productList = response;
+     });
+  }
+}
+//shared service.ts//
+constructor(private http: HttpClient) { }
+getProductListDetails(): Observable<any> {
+return this.http.get<any>('http://localhost:3020/products');
+}
+enquireOrder(details: any): Observable<any>{
+return this.http.post<any>('http://localhost:3020/enquiries', details);
+}
+getProductDetails(id: any): Observable<any> {
+return this.http.get<any>('http://localhost:3020/products/:id');
+}
+}
+ 
+//filterpipe.ts//
+@Pipe({
+name: 'filter'
+})
+export class FilterPipe implements PipeTransform {
+transform(products: any[], category: string): any[] {
+let filtered: any [] = [];
+products.forEach(function (product) {
+if(product.category == category) {
+filtered.push(product)
+}})
+return filtered;
+}}
