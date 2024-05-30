@@ -1,0 +1,458 @@
+
+--app.component.html--<!-- 
+    1. Add the code to link to the appropriate routes
+    2. Add the tag required to load the view of routed component
+-->
+
+
+<nav class="navbar navbar-inverse">
+  <div class="container-fluid">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="#">Quebes</a>
+    </div>
+    <ul class="nav navbar-nav">
+      <li>
+        <a routerLink='/addAsset'>Add Asset</a>
+      </li>
+      <li>
+        <a routerLink='/viewAsset'>View Asset</a>
+      </li>
+    </ul>
+  </div>
+</nav>
+<div>
+<router-outlet></router-outlet>
+</div>
+--routing--
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
+import { AddAssetComponent } from './add-asset/add-asset.component';
+import { ViewAssetComponent } from './view-asset/view-asset.component';
+import { UpdateAssetComponent } from './update-asset/update-asset.component';
+import { UpdateGuard } from './shared/update.guard';
+
+
+
+/*
+  Add the route paths to navigate to appropriate
+  1. /addAsset -> AddAssetComponent
+  2. /viewAsset -> ViewAssetComponent
+  3. /updateAsset/:assetId -> UpdateAssetComponet; update route gaurd should be applied
+  4. In case an Invalid URL is provided, the user must be redirected to the addAsset page.
+  */
+
+
+export const routes: Routes =[
+    {path : 'addAsset', component: AddAssetComponent},
+    {path : 'viewAsset', component: ViewAssetComponent},
+    {path : 'updateAsset/:assetId', component: UpdateAssetComponent, canActivate : [UpdateGuard]},
+    {path : '', redirectTo:'addAsset', pathMatch: 'full'},
+ ]
+
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+--viewasset.ts--
+import { Component } from '@angular/core';
+import { AssetService } from '../shared/asset.service';
+import { Router } from '@angular/router';
+import Asset from '../shared/Asset';
+
+
+@Component({
+  selector: 'app-view-asset',
+  templateUrl: './view-asset.component.html',
+  styleUrls: ['./view-asset.component.css']
+})
+export class ViewAssetComponent {
+
+
+  errorMessage: string;
+  assetId: string;
+  assetDetails: Asset;
+  successMessage: any;
+  message: any;
+
+
+  constructor(private assetService: AssetService, private router: Router) { }
+
+
+  /*
+It should invoke getAssetDetails() method of AssetService by passing assetId as a parameter.
+The success callback should populate the successMessage with the message in response
+The error callback should populate the errorMessage with the message in response
+*/
+  viewAsset() {
+    // code here
+    this.errorMessage = null;
+     this.successMessage = null;
+     this.assetService.getAssetDetails(this.assetId).subscribe(
+        success =>  this.successMessage = success.message,
+         error=> this.errorMessage = error.message
+    )
+  }
+
+  /*
+It should navigate to /updateAsset/:assetId 
+*/
+  update() {
+    //  code here
+    this.router.navigate(['/updateAsset/'+ this.assetId])
+  }
+
+}
+--viewasset.html--
+<!--
+  1. Do not create the field using form tag.
+  2. When user enters asset id & click on get details, 
+   viewAsset() method must be invoked.
+  3. When user clicks update it should call update() method
+-->
+
+
+
+
+<div class="row">
+    <br/>
+    <div class="col-md-6 col-md-offset-3">
+        <div class="panel panel-primary">
+            <div class="panel-heading">View Booking</div>
+            <!-- Code here -->
+
+<label for="selectAssetId">Select Asset Id</label>
+<input type="number" [(ngModel)]="assetId">
+<button type="submit" (click)="viewAsset()">Get Details</button>
+
+<div *ngIf="assetDetails!=null"> 
+<table>
+    <thead>
+        <tr>
+            <th>Asset Name</th>
+            <th>Asset Category</th>
+            <th>Asset Description</th>
+            <th>Date of Purchase</th>
+            <th>Asset Cost</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>{{assetDetails.assetName}}</td>
+            <td>{{assetDetails.assetCategory}}</td>
+            <td>{{assetDetails.assetDescription}}</td>
+            <td>{{assetDetails.dateOfPurchase}}</td>
+            <td>{{assetDetails.assetCost | currency: 'INR'}}</td>
+            <td (click)="update()">update</td>
+        </tr>
+    </tbody>
+</table>
+<div *ngIf="errorMessage!=null">
+<span class="text-danger">{{errorMessage}}</span>
+</div>
+</div>
+        </div>
+    </div>
+</div>
+--updateasset.ts--
+import { Component, OnInit } from '@angular/core';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { AssetService } from '../shared/asset.service';
+import { ActivatedRoute } from '@angular/router';
+
+@Component({
+  selector: 'app-update-asset',
+  templateUrl: './update-asset.component.html',
+  styleUrls: ['./update-asset.component.css']
+})
+export class UpdateAssetComponent implements OnInit {
+
+  data: any;
+  successMessage: string;
+  updateAssetForm: FormGroup;
+  assetId: any;
+  message: string;
+
+  constructor(private assetService: AssetService, private fb: FormBuilder, private route: ActivatedRoute) {
+  }
+  
+  ngOnInit() {
+    // Add specified validators
+    this.updateAssetForm = this.fb.group({
+               updateField :['', Validators.required],
+           updateValue :['', Validators.required]
+    })
+    
+  }
+
+
+  /*
+It should invoke updateAsset() method of AssetService by passing assetId and 
+the value to be updated.
+   Example:updateAsset(1001,{"assetName":"Dell"})
+The success callback should populate the successMessage with the message in response
+*/
+  updateAsset() {
+    // Code here
+    this.successMessage = null;
+    this.assetService.updateAsset(this.assetId, this.data).subscribe(
+     success => this.successMessage = success.messagemessagemessagemessagemessagemessagemessagemessageexport
+       )
+  }
+
+
+}
+--updateasset.html--
+<!--
+    Note:
+        1. Use formControlName as id for each input field. 
+    eg:
+        <input type="text" formControlName="userName" id="userName"/>
+-->
+
+<div class="row">
+  <br/>
+  <div class="col-md-6 col-md-offset-3">
+    <div class="panel panel-primary">
+      <div class="panel-heading">Update Asset</div>
+      <div class="panel-body">
+        <!-- Code here -->
+
+<form [formGroup]="updateAssetForm" (ngSubmit)="updateAsset()">
+
+  <div class="form-group">
+      <label for="updateField">Field</label>
+      <select formControlName="updateField" id="updateField" class="form-control">
+          <option value="" disabled selected>Select Field</option>
+          <option value="assetName">Asset Name</option>
+          <option value="assetCategory">Asset Category</option>
+          <option value="assetDescription">Asset Description</option>
+      </select>
+  </div>
+
+  <div class="form-group">
+      <label for="updateValue">Value</label>
+      <input type="text" class="form-control" id="updateValue" formControlName="updateValue">
+    <span class="text-danger" *ngIf="updateAssetForm.controls.updateValue.errors && updateAssetForm.controls.updateValue.dirty"> Enter a valid value</span>
+  </div>
+
+  <div class="form-group">
+      <button class="btn btn-primary" type="submit" [disabled]="updateAssetForm.invalid || updateAssetForm.pristine">Update Asset</button>
+  </div>
+
+  <div *ngIf="successMessage!=null">
+  <span class="text-success">{{successMessage}}</span>
+  </div>
+  <div *ngIf="errorMessage!=null">
+      <span class="text-danger">{{errorMessage}}</span>
+      </div>
+</form>
+  
+      </div>
+    </div>
+  </div>
+</div>
+addasset.ts---
+import { Component, OnInit } from '@angular/core';
+import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
+import { AssetService } from '../shared/asset.service';
+
+
+@Component({
+  selector: 'app-add-asset',
+  templateUrl: './add-asset.component.html',
+  styleUrls: ['./add-asset.component.css']
+})
+
+
+
+export class AddAssetComponent implements OnInit {
+
+  successMessage: string;
+  addAssetForm: FormGroup;
+  message: string;
+
+  constructor(private fb: FormBuilder, private assetService: AssetService) {
+  }
+
+ ngOnInit(){
+     this.addAssetForm = this.fb.group({
+         assetName : ['', Validators.required],
+         assetCategory : ['', Validators.required],
+         dateOfPurchase : ['', [Validators.required, validateDateOfPurchase]],
+         assetCost : ['', Validators.required],
+         assetDescription : ['',[Validators.required, Validators.max(50)]]
+     })
+ }
+
+
+  /*
+It should invoke addAsset() method of AssetService by passing addAssetForm object as a parameter.
+The success callback should populate the successMessage with the message in response
+*/
+
+addAsset(){
+   this.successMessage = null;
+   this.assetService.addAsset(this.addAssetForm.value).subscribe(
+      ( success )=> this.successMessage = success.message
+   )
+   }
+
+}
+
+
+/*
+  Add Custom Validation for dateOfPurchase
+*/
+function validateDateOfPurchase(c: FormControl) {
+  // code here
+  let dop= new Date(c.value);
+   let today=new Date();
+  if(dop>today)
+ return{ dateError: {message: "Date should not be greater than //today's date"}
+ }
+ return null;
+}
+
+--addasset.html--
+<!--
+    Note:
+        1. Use formControlName as id for each input field. 
+    eg:
+        <input type="text" formControlName="userName" id="userName"/>
+-->
+
+
+<div class="col-md-6 col-md-offset-3">
+  <br/>
+  <div class="panel">
+    <div class="panel-heading ">Add a new Asset</div>
+    <div class="panel-body">
+
+      <!-- code here -->
+      <form [formGroup]="addAssetForm" (ngSubmit)="addAsset()">
+        <div class="form-group">
+          <label for="assetName">Asset Name</label>
+          <input type="text" class="form-control" id="assetName" formControlName="assetName">
+          <span class="text-danger" *ngIf="addAssetForm.controls.assetName.errors && addAssetForm.controls.assetName.dirty">Please Enter Name</span>
+        </div>
+    
+        <div class="form-group">
+            <label for="assetCategory">Asset Category</label>
+            <select formControlName="assetCategory" id="assetCategory" class="form-control">
+                <option value="" disabled selected>Select a category</option>
+                <option value="laptop">Laptop</option>
+                <option value="desktop">Desktop</option>
+                <option value="voip">Voip</option>
+                <option value="router">Router</option>
+            </select>
+        </div>
+    
+        <div class="form-group">
+            <label for="assetDescription">Asset Description</label>
+            <input type="text" class="form-control" id="assetDescription" formControlName="assetDescription">
+            <span class="text-danger" *ngIf="addAssetForm.controls.assetDescription.errors && addAssetForm.controls.assetDescription.dirty">Please Enter Description</span>
+          </div>
+    
+          <div class="form-group">
+            <label for="dateOfPurchase">Date Of Purchase</label>
+            <input type="date" class="form-control" id="dateOfPurchase" formControlName="dateOfPurchase">
+            <span class="text-danger" *ngIf="addAssetForm.controls.dateOfPurchase.errors && addAssetForm.controls.dateOfPurchase.dirty">date of purchase cannot be future date</span>
+          </div>
+    
+          <div class="form-group">
+            <label for="assetCost">Asset Cost</label>
+            <input type="number" class="form-control" id="assetCost" formControlName="assetCost">
+            <span class="text-danger" *ngIf="addAssetForm.controls.assetCost.errors && addAssetForm.controls.assetCost.dirty">please Enter Cost</span>
+          </div>
+    
+    </form>
+    </div>
+  </div>
+</div>
+--assetservices.ts--
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { AddAssetComponent } from '../add-asset/add-asset.component';
+import { ViewAssetComponent } from '../view-asset/view-asset.component';
+import { UpdateAssetComponent } from '../update-asset/update-asset.component';
+
+
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AssetService {
+
+  url = 'http://localhost:3020/assetDetails'; /*Provide the URL of the web service to consume*/
+  authenticate = false;
+  constructor(private httpClient: HttpClient) { }
+
+  /*
+    Consumes the web service exposed at the POST URL -> http://localhost:3020/assetDetails
+    After sending the request, the response must be an Observable
+    Return the response back to the AddAssetComponent
+  */
+
+ addAsset(data) : Observable <AddAssetComponent>{
+       return this.httpClient.post<AddAssetComponent>(this.url,data)
+   }
+
+
+
+
+  /*
+   Consumes the web service exposed at the GET URL -> http://localhost:3020/assetDetails/:assetId
+   After sending the request, the response must be an Observable
+   Return the response back to the ViewAssetComponent
+  */
+
+ getAssetDetails(assetId): Observable<ViewAssetComponent>{
+     return this.httpClient.get<ViewAssetComponent>('http://localhost:3020/assetDetails' + assetId)
+ }
+
+  /*
+ Consumes the web service exposed at the PATCH URL -> http://localhost:3020/assetDetails/:assetId
+ After sending the request, the response must be an Observable
+ Return the response back to the UpdateAssetComponent
+*/
+
+ updateAsset(assetId, data): Observable<UpdateAssetComponent>{
+     return this.httpClient.patch<UpdateAssetComponent>('http://localhost:3020/assetDetails' + assetId,data) 
+ }
+
+
+
+}
+--updateGuard.ts
+import { Injectable } from '@angular/core';
+import { CanActivate, Router } from '@angular/router';
+import { AssetService } from './asset.service';
+
+/*
+It should invoke authenticate property of AssetService;
+if the authenticate returns true; return the same
+else navigate to '/viewAsset' 
+*/
+
+
+@Injectable({
+  providedIn: 'root'
+})
+
+export class UpdateGuard implements CanActivate {
+  constructor(private assetService: AssetService, private router: Router) { }
+  canActivate(): boolean {
+    //code here
+    return null
+    
+ if (this.assetService.authenticate) {
+     return true
+ } else {this.router.navigate(['/viewAsset'])
+  }
+}
+
+}
