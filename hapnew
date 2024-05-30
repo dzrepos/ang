@@ -1,0 +1,557 @@
+app-routing
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { ServiceDetailComponent } from './service-detail/service-detail.component';
+import { BookServiceComponent } from './book-service/book-service.component';
+import { HomeComponent } from './home/home.component';
+import { ViewBookingsComponent } from './view-bookings/view-bookings.component';
+
+//Do not add any more Imports here !!
+
+export const routes: Routes = [
+  {path:'services' , component:HomeComponent},
+  {path:'serviceDetails/:category' , component:ServiceDetailComponent},
+  {path:'bookservice/:type' , component:BookServiceComponent},
+  {path :'viewbookings' , component:ViewBookingsComponent},
+  {path:'**', redirectTo:'/services' , pathMatch:'full'}
+/* Refer to Instructions Document  and implement necessary Routing Paths, Route Params, Lazy Loaded Modules
+    and Corresponding Components !! */
+
+     // add code here
+  //  {path:'**', redirectTo:'/services'}
+];
+
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+
+
+book service component.ts
+
+import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { HomeService } from '../shared/HomeService';
+import { UtilityService } from '../shared/utility.service';
+
+@Component({
+  selector: 'app-book-service',
+  templateUrl: './book-service.component.html',
+  styleUrls: ['./book-service.component.css']
+})
+export class BookServiceComponent implements OnInit {
+  //Do not add any extra properties/methods or modify the names of the given properties/methods.
+  serviceTypeToBook!: string;
+  bookServiceForm: FormGroup = new FormGroup({});
+  successMessage!: string;
+  errorMessage!: string;
+
+  constructor(private formBuilder: FormBuilder, private route: ActivatedRoute, private service: UtilityService) { }
+
+  ngOnInit(): void {
+    /* 
+    1. Write the appropriate code to populate serviceTypeToBook property with the value of 'type' parameter passed to this component via the route.
+    2. Create the form based on the Requirement
+       2.a. serviceType form field  should be auto populated based on the value of serviceTypeToBook property. 
+            For disabling the form field, refer to instructions given in component HTML file.        
+       2.b. Refer QP for further details on form validations  */
+
+    //code here
+    this.route.paramMap.subscribe(params => {
+        this.serviceTypeToBook = params.get('type') || '';
+    
+        this.bookServiceForm = this.formBuilder.group({
+            name:['',[Validators.required, Validators.pattern(/^[A-Za-z\s]+$/)]],
+            mobile:['',[Validators.required, Validators.pattern(/^[0-9]{10}/)]],
+           email:['',[Validators.required, Validators.email]],
+           address:['', [Validators.required]],
+           serviceType:[{value:this.serviceTypeToBook, disabled:true}],
+           date:['',[Validators.required]]
+        })
+    })
+  }
+
+
+  bookService() {
+    /*
+      It should invoke bookHomeService() method of UtilityService by passing form data as parameter.
+      The success callback should populate the successMessage with the message in response
+      The error callback should populate the errorMessage with the message in response
+    */
+    //code here
+    this.service.bookHomeService(this.bookServiceForm.value).subscribe(
+              success => {
+                  this.successMessage = success.message
+              },
+              error => {
+                  this.errorMessage = error.message
+              }
+          
+          )
+
+  }
+}
+
+
+
+home.componenet.html
+
+
+<br />
+<div class="container-fluid">
+  <div class="rounded-3">
+    <div class="container-fluid py-1">
+      <figure class="text-center">
+        <blockquote class="blockquote">
+          <p class="display-6">Your home service utility provider,</p>
+        </blockquote>
+        <figcaption class="display-6">
+          -  just a click away!!!
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+
+
+  <br />
+
+  <div class="row row-cols-1 row-cols-md-4 bg-light p-4">
+    <div class="col" *ngFor="let service of homeServices" >
+   
+      <!-- on click of the below div, viewDetails should be invoked, by passing the current serviceCategory.
+      Update the code of the below div accordingly. -->
+      <div class="card mb-3" style="cursor:pointer" onclick="viewDetails({{ service.id }})" >
+       
+        <img src={{service.image}} class="card-img-top" alt="catergory">
+        <div class="card-body text-center">
+          <h5 class="card-title">{{service.serviceCategory}}</h5>        
+        </div>       
+        
+      </div>
+    </div>
+
+  </div>
+
+
+home.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  styleUrls: ['./home.component.css']
+})
+export class HomeComponent {
+ 
+//Do not add any extra properties/methods or modify the names of the given properties/methods.
+
+  homeServices = [
+    { serviceCategory: "Electrical", image: "../assets/electrical.jpg" },
+    { serviceCategory: "Plumbing", image: "../assets/plumbing.jpg" },
+    { serviceCategory: "Carpentry", image: "../assets/carpentry.jpg" },
+    { serviceCategory: "Cleaning", image: "../assets/homecleaning.jpg" }
+  ]
+
+  constructor(private router: Router) { }
+  
+  viewDetails(serviceCategory: string) {
+    // should route to /serviceDetails by passing the serviceCategory selected by user
+    // code here
+    return this.router.navigate(['/serviceDetails', serviceCategory]);
+    
+  }
+
+}
+
+
+
+servics-detail.component.html
+
+
+<div class="container">
+
+  <h3 class="text-center p-3 ">
+   <!-- On launch of ServiceDetailsComponent, 
+          the service category clicked by the user from the HomeServices should be 
+           displayed as the content of the below span. -->
+    <span #title id="title">{{title}}</span>
+    Services
+  </h3><br/>
+
+    <!-- 
+    1. Display serviceDetails in a tabular layout, as per requirment mentioned.
+    2. Every row should have a Book Service button on click of which respective method
+      of component class is invoked so that booking can be done for the respective service.
+    3. Use class="text-center" wherever center alignment is needed
+    4. Use class="btn btn-info" for the Book Service button 
+    5. Look and feel of table should be as mentioned in screenshot given in QP-->
+  <table class="table table-bordered  table-light">
+    <thead class="text-center">
+      <tr>
+      <!-- table headers should be written here -->  
+      <th>SI.No.</th>
+        <th>Service Type</th>
+      <th>Cost</th>
+      <th>Duration</th>
+      <th>Description</th>
+      <th>Book</th>   
+      
+    </tr>
+    </thead>
+    <tbody>      
+        <!-- display the serviceDetails here as per screenshot -->
+        <!-- <tr *ngFor="let service of seviceDetails, i=index">
+          <td>{{i+1}}</td>
+          <td>{{service.serviceType}}</td>
+          <td>{{service.cost | currency: 'INR'}}</td>
+          <td>{{service.duration}}</td>
+          <td>{{service.description}}</td>
+          <td>
+              <button (click)="bookService(service)" class="btn btn-info">Book Service</button>
+          </td>
+          </tr> -->
+     
+    </tbody>
+  </table>
+</div>
+
+
+service-detail.component.ts
+
+
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HomeService } from '../shared/HomeService';
+import { UtilityService } from '../shared/utility.service';
+@Component({
+  selector: 'app-service-detail',
+  templateUrl: './service-detail.component.html',
+  styleUrls: ['./service-detail.component.css']
+})
+export class ServiceDetailComponent implements  AfterViewInit, OnInit {
+  //Do not add any extra properties/methods or modify the names of the given properties/methods.
+  serviceDetails:any[]=[];  
+  serviceToBook!:HomeService;
+
+  // Use the appropriate code to make the below property refer to the respective template variable 'title'
+  @ViewChild('title') title!: ElementRef;
+ 
+
+  constructor(private route: ActivatedRoute, private service: UtilityService, private router:Router) { }
+  
+  ngAfterViewInit() {
+    // Write the appropriate code to retrieve category passed to this component via the route
+    // and update the content of the title accordingly
+
+    // code here
+   
+     this.route.paramMap.subscribe(
+          params => {const category= params.get('category');
+        document.title=`${category} Services`}
+       )
+   
+  }
+
+  ngOnInit(): void {
+    /* It should : 
+    1. retrieve the category passed to the component via route
+    2. fetch the list of homeservices by invoking getServiceDetails() method of UtilityService
+    3. populate data to serviceDetails property 
+     whereever the serviceCategory matches to the category passed to the component via the route*/
+
+     // code here
+     this.route.paramMap.subscribe(
+   params => {
+       const category = params.get('category');
+        this.service.getServiceDetails().subscribe(
+          (data) => {this.serviceDetails = data;
+          this.serviceDetails.filter(service => service.category === category)}
+        ) }  
+ )
+
+  }  
+  
+  book(serviceType:string){
+  /*
+   1. It should navigate to /bookservice/:serviceType   
+   */
+
+   // code here
+    this.router.navigate(['/bookservice', serviceType])
+  }
+}
+
+
+
+utility.service.ts
+
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { HomeService } from './HomeService';
+import { Booking } from './booking';
+@Injectable({
+  providedIn: 'root'
+})
+export class UtilityService {
+
+  constructor(private http: HttpClient) { }
+
+  /*
+  Consumes the web service exposed at the GET URL -> http://localhost:3020/getServices
+  After sending the request, the response must be an Observable
+  Return the response back to the ServiceDetailComponent
+ */
+  getServiceDetails(): Observable<HomeService[]> {
+    // code here 
+    
+    // replace the below dummy return statement and
+    // return the requirement as per instructions given above
+    return this.http.get<HomeService[]>('http://localhost:3020/getServices');
+  }
+  
+  
+  /*
+ Consumes the web service exposed at the POST URL -> http://localhost:3020/bookings
+ After sending the request, the response must be an Observable
+ Return the response back to the BookServiceComponent 
+*/
+  bookHomeService(bookingDetail: Booking): Observable<any> {
+    // code here
+    
+    return this.http.post<any>('http://localhost:3020/bookings',bookingDetail);
+  }
+
+
+ 
+}
+
+
+
+serach.pipe.ts
+
+
+import { Pipe, PipeTransform } from '@angular/core';
+
+// It should filter the bookings array based on service type
+@Pipe({
+  name: 'search'
+})
+export class SearchPipe implements PipeTransform {
+
+  transform(bookings: any, type?: any): any {
+
+    //code here
+        if(!type || type === 'all'){
+                    return bookings;
+                }else{
+                    return bookings.filter(booking => booking.serviceType === type)
+                }
+  
+   
+}
+
+}
+
+
+
+view-booking-routing.ts
+
+
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { ViewBookingsComponent } from './view-bookings.component';
+//Do not add any more Imports here !!
+
+export const bookingRoutes: Routes = [
+  //add required nested routes here as per instructions
+
+ //code here
+//{path :'lazy', loadChildren: () => ViewBookingsComponent.then(m => m.lazyModule)}
+];
+@NgModule({
+    imports: [RouterModule.forChild(bookingRoutes)],
+    exports: [RouterModule]
+})
+export class ViewBookingsRoutingModule { }
+
+
+
+view booking component .html
+
+<div class="container">
+
+  <!-- this div should be displayed if atleast one booking is present. 
+    Update the code of the div accordingly. -->
+  <div >   
+   
+    <h3 class="text-center p-3 ">Your Bookings</h3>
+    <div class="row">
+      <div class="col-md-4">
+        <form class="d-flex">
+          <!-- Display search bar to filter details based on Service Type Name -->
+          <!-- Hint: create input control of search type having:
+            a. class="form-control me-2"
+            b. necessary placeholder 
+            c. name="type" and 
+            d. two-way bind it to 'type' property -->
+
+             <!-- code here -->
+        
+
+        </form>
+      </div>
+    </div><br />
+
+    <!-- 
+1. Create a table as per Instruction and display all appropriate fields from bookings object
+2. Pass iterable values to custom pipe 'search' and pass the 'type' property to filter out results
+3. Use class="text-center" wherever center alignment is needed
+4. Look and feel of table should be as mentioned in screenshot given in QP.
+5. Date should be displayed as shown in screenshot.-->
+  <table class="table table-bordered table-light">
+      <thead class="text-center ">
+        <tr>
+            <!-- table headers should be written here -->
+         
+        </tr>
+      </thead>
+      <tbody>
+        <!-- display the bookings here as per screenshot -->
+        
+      </tbody>
+    </table>
+  </div>
+  <br /><br />
+
+  <!-- this div should be displayed if there are no bookings available. -->
+  <div class="alert alert-danger text-center col-6 offset-2" >
+    <!-- Display as shown in screenshot -->
+   <!-- code here -->
+
+  </div>
+  <br /><br />
+
+   <!-- this div should be display the errorMessage if any -->
+  <div class="alert alert-danger text-center col-6 offset-3" >
+    <!-- code here -->
+  
+  </div>
+</div>
+
+
+view-booking-component.ts
+
+
+
+import { Component, OnInit } from '@angular/core';
+import { Booking } from '../shared/booking';
+import { ViewBookingsService } from './view-bookings.service';
+
+@Component({
+  selector: 'app-view-bookings',
+  templateUrl: './view-bookings.component.html',
+  styleUrls: ['./view-bookings.component.css']
+})
+export class ViewBookingsComponent implements OnInit {
+  //Do not add any extra properties/methods or modify the names of the given properties/methods.
+  bookings: Booking[] = [];
+  errorMessage!: string;
+  type:string='';
+  constructor(private service: ViewBookingsService) { }
+
+  ngOnInit(): void {
+    /* It should fetch bookings by invoking getBookings() 
+    method of ViewBookingsService and populate the response to bookings property */
+
+    // code here
+    this.service.getBookings().subscribe(data => {
+      this.bookings =data;
+  })
+    
+
+  }
+  
+}
+
+
+
+view booking.service.ts
+
+
+import { Injectable } from '@angular/core';
+import { HttpClient,HttpErrorResponse } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { Booking } from '../shared/booking';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ViewBookingsService {
+
+  constructor(private http: HttpClient) { }
+
+  /*
+ Consumes the web service exposed at the GET URL -> http://localhost:3020/getBookings
+ After sending the request, the response must be an Observable
+ Return the response back to the ViewBookingsComponent
+*/
+getBookings(): Observable<Booking[]> {
+  // code here
+
+  // replace the below dummy return statement and
+    // return the requirement as per instructions given above
+    return this.http.get<Booking[]>('http://localhost:3020/getBookings')
+  }
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
