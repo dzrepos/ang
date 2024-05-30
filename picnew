@@ -1,0 +1,580 @@
+--app.html--
+<nav class="navbar navbar-inverse">
+
+  <div class="container-fluid">
+
+  <div class="navbar-header">
+
+  <a class="navbar-brand" href="#">Pictor Telecom</a>
+
+  </div>
+
+  <ul class="nav navbar-nav">
+
+  <li>
+
+  <a routerLink="/addPlan" routerLinkActive="active">Add Plan</a>
+
+  </li>
+
+  <li>
+
+  <a routerLink="/viewPlan" routerLinkActive="active">View Plan</a>
+
+  </li>
+
+  </ul>
+
+  </div>
+
+  </nav>
+
+  <div>
+
+  <router-outlet></router-outlet>
+
+  </div>
+--app.routing--
+
+import {NgModule} from '@angular/core';
+
+import{Routes,RouterModule} from '@angular/router';
+
+import {AddPlanComponent} from './add-plan/add-plan.component';
+
+import {ViewPlanComponent} from './view-plan/view-plan.component';
+
+export const routes:Routes=[
+
+  {path:'addPlan',component:AddPlanComponent},
+
+  {path:'viewPlan',component:ViewPlanComponent},
+
+  {path:'**',redirectTo:'/addPlan', pathMatch: 'full'}
+
+];
+
+@NgModule({
+
+  imports:[RouterModule.forRoot(routes)],
+
+  exports:[RouterModule]
+
+})
+
+export class AppRoutingModule{}
+--restSerive.ts--
+
+import { Injectable } from "@angular/core";
+
+import{HttpClient} from '@angular/common/http';
+
+import { Observable } from 'rxjs/internal/Observable';
+
+@Injectable({
+
+ providedIn:'root'
+
+})
+
+ export class PlanService{
+// getPlanDetails(pId: number) {
+//     throw new Error("Method not implemented.");
+// }
+
+url = "http://localhost:3020/planDetails"
+
+constructor(private httpClient:HttpClient){}
+
+addPlan(data: any):Observable<any>{
+
+  return this.httpClient.post<any>(this.url,data);
+}
+  getPlanIds():Observable<any>{
+
+  return this.httpClient.get<any>(this.url);
+
+  }
+
+ getPlanDetails(planId){
+
+ return this.httpClient.get(this.url+planId);
+
+ }
+
+ deletePlan(planId):Observable<any>{
+
+return this.httpClient.delete<any>(this.url+planId);
+
+ }}
+---unitpipe.ts--
+import { Pipe, PipeTransform } from '@angular/core';
+
+
+/*
+UnitPipe will transform the input by adding the unit GB or MB. 
+If the input is less than one then the unit should be MB;
+else the unit should be GB
+
+1. Sample Input: 0.2
+   Expected Output: 200 MB
+
+2. Sample Input: 5
+   Expected Output: 5 GB
+
+   
+Hint: 1 GB = 1000 MB
+
+*/
+
+
+@Pipe({
+  name: 'unitPipe'
+})
+export class UnitPipe implements PipeTransform {
+
+  transform(value: any): any {
+    let val =parseFloat(value);
+    if(value<1 && value>=0){
+      return Math.round(val*1000) + "MB";
+    }
+  
+      return val + 'GB';
+    }
+    // Code here
+  }
+
+
+--addplanComponent.ts--
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { PlanService } from '../shared/rest.service';
+
+@Component({
+  selector: 'app-add-plan',
+  templateUrl: './add-plan.component.html',
+  styleUrls: ['./add-plan.component.css']
+})
+
+export class AddPlanComponent implements OnInit {
+
+  errorMessage: string;
+  successMessage: string;
+  addPlanForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private planService: PlanService) { }
+
+
+  ngOnInit(){
+
+    this.addPlanForm=this.fb.group({
+   
+        planValue: ['',[Validators.required]],
+   
+        data: ['',[Validators.required,Validators.max(200)]],
+   
+        unLimitedCalls:['',[Validators.required]],
+   
+        addOns:['',[Validators.required,Validators.pattern(/[A-Za-z!@#$%^&*]/)]],
+   
+        planType:['',[Validators.required]],
+   
+      })
+   
+     }
+   
+     addPlan(){
+   
+      this.successMessage=this.errorMessage=""
+   
+      let obj=this.addPlanForm.value
+   
+      this.planService.addPlan(obj).subscribe(data=>this.successMessage=data.message)
+   
+      this.planService.addPlan(obj).subscribe(data=>this.errorMessage=data.message)
+   
+      }
+   
+   
+   
+  //    addPlan(){
+   
+  //  this.errorMessage="";
+   
+  //     this.successMessage="";
+   
+  //     this.planService.addPlan(this.addPlanForm.value)
+   
+  //     .subscribe((res)=>{
+   
+  //       console.log(res);
+   
+  //       this.successMessage=res.message;
+   
+  //     },(err)=>{
+   
+  //       console.log(err);
+   
+  //       this.errorMessage=err.error.message;
+   
+  //     })
+   
+  //  }
+   
+
+
+
+
+
+    }
+addPlan.html--
+<div class="col-md-6 col-md-offset-3">
+
+    <br/>
+   
+    <div class="panel panel-primary">
+   
+     <div class="panel-heading">Create a new plan</div>
+   
+      <div class="panel-body">
+   
+        //create the form//
+   
+      <form [formGroup]="addPlanForm" (ngSubmit)="addPlan()">
+   
+       <div>
+   
+        <label>Plan Value</label><br>
+   
+        <input type="text" class="form-control" id="planValue" formControlName="planValue">
+   
+        <div *ngIf="addPlanForm.controls.planValue.errors" class="text-danger">
+   
+         <div *ngIf="addPlanForm.controls.planValue.errors?.required">
+   
+          Please Enter Plan Value
+   
+         </div>
+   
+        </div>
+   
+       </div>
+   
+    <div>
+   
+        <label>GB/Day</label><br>
+   
+        <input type="number" class="form-control" id="data" formControlName="data">
+   
+        <div *ngIf="addPlanForm.controls.data.errors" class="text-danger">
+   
+         <div *ngIf="addPlanForm.controls.data.errors?.required">
+   
+          Please Enter GB/Day
+   
+         </div>
+   
+         <div *ngIf="addPlanForm.controls.data.errors?.max">
+   
+          Maximum data that can be provided is 200GB/Day
+   
+           </div>
+   
+        </div>
+   
+       </div>
+   
+     <div>
+   
+       <div>Unlimited Calls</div>
+   
+       <input type="radio" class="form-control" value="true" id="unlimitedCalls">
+   
+       <label>true</label> &nbsp;
+   
+       <input type="radio" class="form-control-inline" value="false" id="unlimitedCalls">
+   
+       <label>false</label>
+   
+      </div>
+   
+    <div>
+   
+      <label>Add-ons</label>
+   
+      <textarea type="text-area" class="form-control" id="addOns" formControlName="addOns"></textarea>
+   
+      <div *ngIf="addPlanForm.controls.addOns.errors" class="text-danger">
+   
+       <div *ngIf="addPlanForm.controls.addOns.errors?.required">
+   
+        Please Enter Add-ons
+   
+       </div>
+   
+       <div *ngIf="addPlanForm.controls.addOns.errors?.pattern">
+   
+        Please enter only alphabets and special characters
+   
+       </div>
+   
+      </div>
+   
+      </div>
+   
+    <div>
+   
+       <div>Type</div>
+   
+       <input type="radio" class="form-control-inline" value="postpaid" id="planType"
+   
+       formControlName="planType">
+   
+       <label>Postpaid</label> &nbsp;
+   
+       <input type="radio" class="form-control-inline" value="prepaid" id="planType"
+   
+       formControlName="planType">
+   
+       <label>Prepaid</label>
+   
+      </div>
+   
+      <div>
+   
+       <button class="btn btn-primary" type="submit" [disabled]="!addPlanForm.valid">Add Plan</button>
+   
+      </div>
+   
+      </form>
+   
+      </div>
+   
+    </div>
+   
+   </div>
+   
+   (or)
+   
+   <form [formGroup]="addPlanForm" (ngSubmit)="addPlan()">
+   
+     <br>Plan Value<br>
+   
+     <input formControlName="planValue" id="planValue" type="text">
+   
+     <span *ngIf="!addPlanForm.get('planValue').valid && addPlanForm.get('planValue').touched" id="planValueError">Please
+   
+       Enter Plan Value</span>
+   
+     <br>GB/Day<br>
+   
+     <input formControlName="data" id="data" type="text">
+   
+     <span *ngIf="!addPlanForm.get('data').valid && addPlanForm.get('data').touched" id="dataError">Please Enter
+   
+       GB/Day</span>
+   
+     <br>unLimitedCalls<br>
+   
+     <input formControlName="unLimitedCalls" id="true" name="unLimitedCalls" type="radio" value="true">True
+   
+     <input formControlName="unLimitedCalls" id="false" name="unLimitedCalls" type="radio" value="false">Fase<br>
+   
+     <br>Add Ons<br>
+   
+     <textarea formControlName="addOns" id="addOns" cols="30" rows="10"></textarea>
+   
+     <span *ngIf="!addPlanForm.get('addOns').valid && addPlanForm.get('addOns').touched" id="addOnsError">Please Enter
+   
+       Add-ons</span>
+   
+     <br>Type<br>
+   
+     <input formControlName="planType" id="pre" name="planType" type="radio" value="postpaid">Postpaid
+   
+     <input formControlName="planType" id="post" name="planType" type="radio" value="prepaid">Prepaid<br>
+   
+     <button type="submit" [disabled]="!addPlanForm.valid"></button>
+   
+   </form>
+   
+   <span>{{successMessage}}</span>
+   
+   <span>{{errorMessage}}</span>
+--viewPlan.ts--
+import { Component, DoCheck } from '@angular/core';
+
+ import { PlanService } from '../shared/rest.service';
+
+ @Component({
+
+ selector: 'app-view-plan',
+
+ templateUrl: './view-plan.component.html',
+
+styleUrls: ['./view-plan.component.css']
+
+})
+
+export class ViewPlanComponent implements DoCheck {
+
+ planIds: Array<any> = []
+
+pId: number = null
+
+constructor(private planService: PlanService) { }
+
+ ngDoCheck() {
+
+this.getIds();
+
+ }
+
+ getIds() {
+
+ this.planService.getPlanIds().subscribe((res) => {
+
+ this.planIds = res;
+
+})
+
+ }}
+--viewplan.html--
+<div class="row">
+
+<div class="col-md-6 col-md-offset-3">
+
+<br/>
+
+<div class="panel panel-primary">
+
+<div class="panel-heading">View Plan</div>
+
+<div class="panel-body">
+
+//code here//
+
+ <label> Please select a plan Id:</label>
+
+<select class="form-control">
+
+ <option>--please select--</option>
+
+ <option value="1001">1001</option>
+
+ <option value="1002">1002</option>
+
+ <option value="1003">1003</option>
+
+ <option value="1004">1004</option>
+
+ <option value="1005">1005</option>
+
+ <option value="1006">1006</option>
+
+</select>
+
+ </div></div></div></div>
+--plan-Details.ts--
+import { Component } from '@angular/core';
+import { PlanService } from '../shared/rest.service'
+
+@Component({
+    selector: 'app-plan-details',
+    templateUrl: './plan-details.component.html',
+    styleUrls: ['./plan-details.component.css']
+})
+export class PlanDetailsComponent {
+
+    constructor(private planService: PlanService) { }
+
+    planDetails: any;
+    displayMessage: string;
+    pId: number;
+    bool: any;
+
+    /*
+        1. Add the appropriate decorator to below setter method so that it can receive
+           the data sent by ViewPlan Component
+        2. It should invoke getPlanDetails() of PlanService, which in turn returns an observable
+        3. The success callback should populate the planDetails with response  
+   
+    */
+
+    
+        // Code here
+        set planId(pId: number){
+
+
+            this.planService.getPlanDetails(pId).subscribe(data=>{
+            
+            this.planDetails=data;
+            
+            })
+            
+            }
+            
+            deletePlan() {
+            
+            this.displayMessage = null;
+            
+            this.planService.deletePlan(this.pId).subscribe((res)=>{
+            
+            this.displayMessage = res.message;
+            
+            })
+            
+            }
+            
+    //         (or)
+            
+    //         this.planService.deletePlan(this.pId).subscribe(data=>{
+            
+    //         this.bool=data;
+            
+    //         this.displayMessage="plan with the planId"+this.pId+" deleted Successfully";
+            
+    //         })
+            
+    //         }
+            
+    // }
+
+
+    /*
+        1. It should invoke deletePlan() of PlanService
+           by passing the value of pId w hich in turn returns an observable
+        2. The success callback should populate the displayMessage with message in response
+    */
+
+//     deletePlan() {
+//         // Code here
+//     }
+
+}
+--plan-details.html--
+<div>
+  <!-- Code here-->
+  <table class = "table table-bordered">
+    <thead>
+      <tr>
+        <th>Plan value</th>
+        <th>Data/day</th>
+        <th>Unlimitedcalls</th>
+        <th>add Ons</th>
+        <th>plan type</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{planDetails.planValue</td>
+                <td>{{planDetails.data</td>
+                  <td>{{planDetails.unlimitedCalls</td>
+                    <td>{{planDetails.addOns</td>
+                      <td>{{planDetails.planType</td>
+                        <td><a href="" (click)= "deletePlan()">delete</a></td>
+            </tr>
+    </tbody>
+  </table>
+</div>
+
