@@ -1,0 +1,329 @@
+//antiqmartnew//
+//enquire-order.component.html//
+<br/><br/>
+<div class="container" *ngIf="productDetails">
+<div class="row">
+<div class="col-md-6 offset-3">
+<h4 class="font-monospace text-center">Enquire Order</h4>
+<br/>
+<form [formGroup]="enquiryForm" (ngSubmit)="enquireOrder()">
+<div class="form-group">
+<label for="id"></label>
+<input type="text" class="form-control" id="id" formControlName="id" disabled="true">
+</div>
+<div class="form-group">
+<label for="productName"></label>
+<input type="text" class="form-control" id="productName" formControlName="productName" disabled="true">
+</div>
+<div class="form-group">
+<label for="cost">Cost</label>
+<input type="text" class="form-control" id="cost" formControlName="cost" disabled="true">
+</div>
+<div class="form-group">
+<label for="message">Message</label>
+<input type="text" class="form-control" id="message" formControlName="message">
+<div id="messageError" class="alert alert-danger" *ngIf="enquiryForm.controls['message'].invalid && enquiryForm.controls['message'].dirty">
+<span class="text-danger" ngIf="enquiryForm.controls['message'].errors['required']">This field is required</span>
+<span class="text-danger" *ngIf="enquiryForm.controls['message'].error['pattern']">Match the required pattern</span>
+</div>
+</div>
+<div class="=form-group">
+<label for="mobile">Mobile</label>
+<input type="text" class="form-control" id="mobile" formCotrolName="mobile">
+<div id="mobileError" class="alert alert-danger" *ngIf="enquiryForm.controls['mobile'].invalid && enquiryForm.controls.['mobile'].dirty">
+<span class="text-danger" *ngIf="enquiryForm.controls['mobile'].error['required']">This field is required</span>
+<span class="text-danger" *ngIf="enquiryForm.controls['mobile'].errors['pattern']">mobile number should contain exactly 10 digits</span>
+</div>
+</div>
+<div class="=form-group">
+<label for="email">Email</label>
+<input type="text" class="form-control" id="email" formCotrolName="email">
+<div id="emailError" class="alert alert-danger" *ngIf="enquiryForm.controls['email'].invalid && enquiryForm.controls.['email'].dirty">
+<span class="text-danger" *ngIf="enquiryForm.controls['email'].error['required']">This field is required</span>
+<span class="text-danger" *ngIf="enquiryForm.controls['email'].errors['email']">check email format</span>
+</div>
+</div>
+<div class="form-group">
+<input type="radio" id="courier" formControlName="courier">Domestic
+<input type="radio" is="courier" formControlName="courier">International
+</div>
+<div class="form-group">
+<input type="checkbox" formControlName="gift" id="gift">Gift wrap
+<button classs="btn btn-primary" type="submit" (onClick)="enquireOrder()" [disabled]="enquiryForm.invalid">Enquire us</button>
+</div>
+<div class="form-group">
+<span class="text-success" *ngIf="successMessage!=null">{{ successMessage}}</span>
+<span class="text-danger" *ngIf="errorMessage!=null">{{errorMessage}}</span>
+</div>
+</form>
+</div>
+</div>
+</div>
+ 
+(or)
+ 
+<br /><br />
+<div class="container" *ngIf="productDetails">
+<div class="row">
+<div class="col-md-6 offset-3">
+<h4 class="font-monospace text-center">Enquire Order</h4>
+<br />
+//create the form//
+<form [formGroup]="enquiryForm" (ngSubmit)="enquireOrder()">
+<div class="form-group">
+<label for="id">Id</label>
+<input class="form-control" type="text" id="id" formControlName="id">
+</div>
+<div class="form-group">
+<label for="productName">Product Name</label>
+<input class="form-control" type="text" id="productName"
+formControlName="productName">
+</div>
+<div class="form-group">
+<label for="cost">Cost</label>
+<input type="text" id="cost" formControlName="cost">
+</div>
+<div class="form-group">
+<label for="message">Message</label>
+<input class="form-control" type="text" id="message" formControlName="message">
+</div>
+<div>
+<label for="mobile">Mobile</label>
+<input type="number" id="mobile" formControlName="mobile">
+</div>
+<div class="form-group">
+<label for="email">Email</label>
+<input type="text" id="email" formControlName="email">
+</div>
+<div class="form-group">
+<input type="radio" id="courier" formControlName="courier">Domestic
+<input type="radio" id="courier" formControlName="courier">International
+</div>
+<div class="form-group">
+<input type="checkbox" id="gift" formControlName="gift">Gift Wrap
+<button [disabled]="!enquiryForm.valid" (click)="enquireOrder()">Enquire Us</button>
+</div>
+<span *ngIf="successMessage != null">{{successMessage}}</span> 
+<span *ngIf="errorMessage != null">{{errorMessage}}</span>
+</form>
+</div>
+</div>
+</div>
+ 
+//enquire-order component.ts//
+ngOnInit(): void {
+this.route.params.subscribe((data)=>{
+  this.selectid=data['id']
+  this.selectid=data['id'] 
+  console.log(this.selectid);
+  })
+  this.service.getProductDetails(this.selectid).subscribe((data)=>{
+  this.productDetails=data 
+  console.log(this.productDetails);
+  })
+  this.enquiryForm=this.formBuilder.group({
+  id: [{value:this.productDetails, disabled:true}],
+productName: [{value:this.productDetails, disabled:true}], 
+cost:[{value:this.productDetails, disabled:true}],
+  message: ["", [Validators.required, Validators.pattern(/^[a-zA-Z] \$/)]],
+  mobile:["", [Validators.required, Validators.max(10)]],
+   email:["", [Validators.required, Validators.pattern(/^ [a-zA-Z0-9.! #$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\. [a-zA-Z0-9-]+)*$/)]],
+  Courier: ["domestic"],
+  gift:[""]
+  })
+}
+enquireOrder(){
+  let obj=this.enquiryForm.value
+  this.ServiceWorker.enquiryOrder(obj).subscribe((data)=>{
+    this.successMessage=data.successMessage
+    this.errorMessage=data.errorMessage
+)}
+}
+(or)
+this.service.getProductDetails(this.route.params.subscribe(param=>param['id']));
+this.enquiryForm = this. formBuilder.group({
+id: new FormControl({value: "", disabled:true}),
+productName: new FormControl({value:"", disabled:true}),
+cost: new FormControl({value: "", disabled: true}),
+message: ['', [Validators.required, Validators.pattern("[A-Za-z\\w]+")]],
+mobile: ['', [Validators.required, Validators.pattern(/"[0-9](10)")]],
+//mobile: ['', [Validators.required,Validators.minLength(10), Validators.pattern(/^[0-9](10)$)]],//
+email: ['', [Validators.required, Validators.email]],
+courier: ['domestic'],
+gift: ['']
+});
+}
+enquireOrder() {
+this.service.enquireOrder(this.enquiryForm).subscribe((response) => {
+this.successMessage=response.message;
+this.errorMessage = response.error.message;
+});
+}
+ 
+ 
+//app-routing.module.ts//
+import { NgModule} from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { HomeComponent } from './home/home.component';
+import { EnquireOrderComponent } from './enquire-order/enquire-order.component'; 
+import { ProductsComponent } from './products/products.component';
+export const routes: Routes = [
+  {path: 'home', component: HomeComponent},
+//{path: '', redirectTo: 'home', pathMatch: 'full'},// 
+{path: 'products', component: ProductsComponent},
+{path: 'enquire-order/:id', component: EnquireOrderComponent}, 
+{path: '**', redirectTo: 'home', pathMatch: 'full'}
+];
+@NgModule({
+imports: [RouterModule.forRoot(routes)],
+exports: [RouterModule]
+})
+export class AppRoutingModule {}
+ 
+//view-details.component.ts//
+import {Component, Input } from '@angular/core';
+import { Router } from '@angular/router';
+import { SharedService } from '../shared.service';
+@Component({
+selector: 'app-view-details',
+templateUrl: './view-details.component.html',
+styleUrls: ['./view-details.component.css']
+})
+export class ViewDetailsComponent {
+constructor(private router: Router, private service: SharedService) { }
+@Input() productDetails: any = {}
+placeOrder() {
+this.router.navigate(['/enquire-order/:id']);
+}}
+(or) 
+productDetails:any{}
+@Input() productId:string;
+placeOrder() {
+this.router.navigate(['/enquire-order/:id']);
+}}
+ 
+ 
+//products.component.ts//
+import {HttpClient } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { SharedService } from '../shared.service';
+@Component({
+selector: 'app-products',
+templateUrl: './products.component.html',
+styleUrls: ['./products.component.css']
+})
+export class ProductsComponent implements OnInit {
+//You may create properties/methods here to bind text to template//
+constructor(private service: SharedService, private http: HttpClient, private router: Router) { }
+product: any = {}
+selectedCategory: any
+productList: any[] = []
+categoryList = ["clock", "painting", "furniture", "pottery"]
+ 
+ngOnInit(): void {
+  this.service.getProductListDetails().subscribe((response) => {
+     this.productList = response;
+     });
+  //console.log(this.productList)//
+}
+//shared service.ts//
+constructor(private http: HttpClient) { }
+getProductListDetails(): Observable<any> {
+return this.http.get<any>('http://localhost:3020/products');
+}
+enquireOrder(details: any): Observable<any>{
+return this.http.post<any>('http://localhost:3020/enquiries', details);
+}
+getProductDetails(id: any): Observable<any> {
+return this.http.get<any>('http://localhost:3020/products/:id');
+}
+}
+ 
+//filterpipe.ts//
+@Pipe({
+name: 'filter'
+})
+export class FilterPipe implements PipeTransform {
+transform(products: any[], category: string): any[] {
+let filtered: any [] = [];
+products.forEach(function (product) {
+if(product.category == category) {
+filtered.push(product)
+}})
+return filtered;
+}}
+(or)
+let a:any[]=[];
+for(let s of products){
+if(s.category==category){
+a.push(s)
+}}
+return a 
+}}
+ 
+//products component.html//
+<br/><br/>
+<div class="container-fluid">
+<div class="px-3">
+<div class="text-end">
+<select>
+<option value=""></option>
+<option *ngFor="Let cat of categoryList" value={{cat|filter}}>{{cat}}</option>
+</select>
+</div>
+</div> 
+    //Display the products//
+<div *ngFor="Let prod of productList>"></div>
+<div class="card" style="width:100px;height:100px">
+<img src="{{prod.img}}" alt="product image">
+<div class="price">{{prod.cost | currency:USD}}</div>
+<button class="btn-btn-primary" data-bs-toogle="modal" data-bs-target="#viewModal">button</button>
+</div></div>
+</div>
+<div class="modal fade" id="viewModal" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered">
+<div class="modal-content">
+<ng-template #modalContent>
+<div *ngIf="selectedProduct">
+<app-view-details [productDetails]="selectedProduct"></app-view-details>
+</div>
+          //<div id="modal-content-container"></div>//
+</ng-template>
+</div>
+</div>
+</div>
+  //productscomponent.ts [chatgpt]//
+import { Component } from '@angular/core';
+@Component({
+  selector: 'app-modal',
+  templateUrl: './modal.component.html',
+})
+export class ModalComponent {
+  selectedProduct: any;
+openModal(product: any) {
+this.selectedProduct = product;
+    // Open the modal using Bootstrap's modal API or another method
+const viewModal = document.getElementById('viewModal');
+const modal = new bootstrap.Modal(viewModal);
+modal.show();
+  }
+}
+ 
+//viewdetailscomponent.html//
+<div class="container-fluid py-1">
+<h4 class="font-monospace">Product Details</h4>
+<br />
+<ul *ngIf="productDetails">
+<li>Name: {{ productDetails.name }}</li>
+<li>Cost: {{ productDetails.cost }}</li> 
+<li>Color: {{ productDetails.color }}</li>
+<li>Description: {{ productDetails.description }}</li>
+<li>Size: {{ productDetails.size }}</li>
+<li *ngIf="productDetails.imageUrl">
+<img [src]="productDetails.imageUrl" alt="Product Image" class="img-thumbnail">
+</li>
+</ul>
+<div *ngIf="!productDetails">No product details available.</div>
+<button class="btn btn-success" type="button" data-bs-dismiss="modal">Enquire Order</button>
+</div>
